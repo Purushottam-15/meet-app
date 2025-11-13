@@ -7,14 +7,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));  // serve static files
+// Serve static files
+app.use(express.static('public'));
 
-const rooms = new Map();    // store active rooms
+// Store active rooms
+const rooms = new Map();
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('create-room', ({ roomId, hostName }) => {   // Create room -Host
+  // Create room (Host)
+  socket.on('create-room', ({ roomId, hostName }) => {
     socket.join(roomId);
     rooms.set(roomId, {
       hostId: socket.id,
@@ -25,7 +28,8 @@ io.on('connection', (socket) => {
     console.log(`Room created: ${roomId} by ${hostName}`);
   });
 
-  socket.on('join-room', ({ roomId, clientName }) => {   // join room -Client
+  // Join room (Client)
+  socket.on('join-room', ({ roomId, clientName }) => {
     const room = rooms.get(roomId);
     
     if (!room) {
@@ -41,22 +45,40 @@ io.on('connection', (socket) => {
     
     room.clients.push(clientInfo);
     
-    io.to(room.hostId).emit('client-joined', {    // Notify host about new client
+    // Notify host about new client
+    io.to(room.hostId).emit('client-joined', {
       clientId: socket.id,
       clientName: clientName,
       totalClients: room.clients.length
     });
 
-    socket.emit('joined-room', {    // send host info to client
-
+    // Send host info to client
+    socket.emit('joined-room', {
       hostId: room.hostId,
       hostName: room.hostName
+    });
+
+    // Notify all other clients about new participant
+    socket.to(roomId).emit('new-participant', {
+      participantId: socket.id,
+      participantName: clientName
+    });
+
+    // Send existing participants to new client
+    const existingParticipants = room.clients
+      .filter(c => c.id !== socket.id)
+      .map(c => ({ id: c.id, name: c.name }));
+    
+    socket.emit('existing-participants', {
+      participants: existingParticipants,
+      host: { id: room.hostId, name: room.hostName }
     });
 
     console.log(`${clientName} joined room ${roomId}`);
   });
 
-  socket.on('offer', ({ target, offer }) => {     // WebRTC signaling
+  // WebRTC signaling
+  socket.on('offer', ({ target, offer }) => {
     io.to(target).emit('offer', {
       offer: offer,
       sender: socket.id
@@ -77,16 +99,20 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('disconnect', () => {       // handle disconnect
+  // Handle disconnect
+  socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     
-    rooms.forEach((room, roomId) => {       // check if disconnected user was a host
+    // Check if disconnected user was a host
+    rooms.forEach((room, roomId) => {
       if (room.hostId === socket.id) {
-        io.to(roomId).emit('host-left');            // notify all clients that host left
+        // Notify all clients that host left
+        io.to(roomId).emit('host-left');
         rooms.delete(roomId);
         console.log(`Room ${roomId} closed - host left`);
       } else {
-        const clientIndex = room.clients.findIndex(c => c.id === socket.id);          // remove client from room
+        // Remove client from room
+        const clientIndex = room.clients.findIndex(c => c.id === socket.id);
         if (clientIndex > -1) {
           room.clients.splice(clientIndex, 1);
           io.to(room.hostId).emit('client-left', {
@@ -117,6 +143,8 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on port ${PORT}`);
 });

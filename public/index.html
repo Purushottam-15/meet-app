@@ -26,7 +26,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 500px;
+            max-width: 900px;
             width: 100%;
         }
 
@@ -103,23 +103,82 @@
             background: #c0392b;
         }
 
+        .btn-small {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+            margin: 5px;
+            display: inline-block;
+        }
+
         #homeScreen, #hostScreen, #clientScreen {
             display: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
 
         .video-container {
             background: #000;
             border-radius: 10px;
-            margin: 20px 0;
             position: relative;
             overflow: hidden;
+            aspect-ratio: 16/9;
         }
 
         video {
             width: 100%;
-            height: auto;
-            display: block;
-            max-height: 400px;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(0,0,0,0.9);
+        }
+
+        .control-btn.active {
+            background: #e74c3c;
         }
 
         .clients-grid {
@@ -187,19 +246,20 @@
             font-weight: 600;
         }
 
-        .video-label {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-
         .hidden {
             display: none !important;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .button-group button {
+            flex: 1;
+            min-width: 150px;
         }
 
         @media (max-width: 600px) {
@@ -209,6 +269,10 @@
             
             h1 {
                 font-size: 24px;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -267,9 +331,16 @@
                 <p><strong>Students Online:</strong> <span id="clientCount" class="status">0</span></p>
             </div>
 
-            <div class="video-container">
-                <div class="video-label">Your Camera</div>
-                <video id="hostVideo" autoplay muted playsinline></video>
+            <div class="video-grid" id="hostVideoGrid">
+                <div class="video-container">
+                    <div class="video-label">You (Teacher)</div>
+                    <video id="hostVideo" autoplay muted playsinline></video>
+                    <div class="video-controls">
+                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎤</button>
+                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📹</button>
+                        <button class="control-btn" onclick="shareHostScreen()">🖥️</button>
+                    </div>
+                </div>
             </div>
 
             <h3 style="margin: 20px 0 10px 0; color: #333;">Connected Students:</h3>
@@ -287,9 +358,15 @@
                 <p><strong>Status:</strong> <span class="status">Connected</span></p>
             </div>
 
-            <div class="video-container">
-                <div class="video-label">Teacher's Screen</div>
-                <video id="clientVideo" autoplay playsinline></video>
+            <div class="video-grid" id="clientVideoGrid">
+                <div class="video-container">
+                    <div class="video-label">You</div>
+                    <video id="myVideo" autoplay muted playsinline></video>
+                    <div class="video-controls">
+                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎤</button>
+                        <button class="control-btn" onclick="shareClientScreen()">🖥️</button>
+                    </div>
+                </div>
             </div>
 
             <button class="btn-danger" onclick="leaveClass()">Leave Class</button>
@@ -300,9 +377,13 @@
     <script>
         const socket = io();
         let localStream = null;
+        let screenStream = null;
         let peerConnections = {};
         let currentRoomId = null;
         let isHost = false;
+        let isMicOn = true;
+        let isCameraOn = true;
+        let currentName = '';
 
         const configuration = {
             iceServers: [
@@ -310,7 +391,9 @@
                 { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
-        function showHome() {   // Navigation
+
+        // Navigation functions
+        function showHome() {
             hideAllScreens();
             document.getElementById('homeScreen').style.display = 'block';
         }
@@ -333,7 +416,8 @@
             document.getElementById('clientScreen').style.display = 'none';
         }
 
-        async function createRoom() {    //Host
+        // Create room (Host)
+        async function createRoom() {
             const hostName = document.getElementById('hostName').value.trim();
             if (!hostName) {
                 alert('Please enter your name');
@@ -349,6 +433,7 @@
                 const roomId = generateRoomId();
                 currentRoomId = roomId;
                 isHost = true;
+                currentName = hostName;
 
                 document.getElementById('hostVideo').srcObject = localStream;
                 document.getElementById('displayRoomId').textContent = roomId;
@@ -363,7 +448,9 @@
                 alert('Could not access camera/microphone. Please grant permissions.');
             }
         }
-        function joinRoom() {    //Client
+
+        // Join room (Client)
+        async function joinRoom() {
             const clientName = document.getElementById('clientName').value.trim();
             const roomId = document.getElementById('roomId').value.trim();
 
@@ -372,17 +459,146 @@
                 return;
             }
 
-            currentRoomId = roomId;
-            isHost = false;
+            try {
+                // Client MUST have camera and audio
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
 
-            socket.emit('join-room', { roomId, clientName });
+                currentRoomId = roomId;
+                isHost = false;
+                currentName = clientName;
+
+                document.getElementById('myVideo').srcObject = localStream;
+
+                socket.emit('join-room', { roomId, clientName });
+            } catch (error) {
+                console.error('Error accessing media devices:', error);
+                alert('Camera and microphone are required to join the class. Please grant permissions.');
+            }
         }
 
-        function generateRoomId() {      // generate random room ID
+        // Generate random room ID
+        function generateRoomId() {
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        socket.on('room-created', ({ roomId }) => {     // socket event handlers
+        // Toggle controls
+        function toggleHostMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isMicOn = audioTrack.enabled;
+                    const btn = document.getElementById('hostMicBtn');
+                    btn.classList.toggle('active', !isMicOn);
+                    btn.textContent = isMicOn ? '🎤' : '🔇';
+                }
+            }
+        }
+
+        function toggleHostCamera() {
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoTrack.enabled = !videoTrack.enabled;
+                    isCameraOn = videoTrack.enabled;
+                    const btn = document.getElementById('hostCamBtn');
+                    btn.classList.toggle('active', !isCameraOn);
+                    btn.textContent = isCameraOn ? '📹' : '📷';
+                }
+            }
+        }
+
+        function toggleClientMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isMicOn = audioTrack.enabled;
+                    const btn = document.getElementById('clientMicBtn');
+                    btn.classList.toggle('active', !isMicOn);
+                    btn.textContent = isMicOn ? '🎤' : '🔇';
+                }
+            }
+        }
+
+        // Screen sharing
+        async function shareHostScreen() {
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: true 
+                });
+
+                // Add screen share video to grid
+                const videoGrid = document.getElementById('hostVideoGrid');
+                const screenContainer = document.createElement('div');
+                screenContainer.className = 'video-container';
+                screenContainer.id = 'hostScreenShare';
+                screenContainer.innerHTML = `
+                    <div class="video-label">Your Screen Share</div>
+                    <video autoplay playsinline></video>
+                `;
+                videoGrid.appendChild(screenContainer);
+                
+                const screenVideo = screenContainer.querySelector('video');
+                screenVideo.srcObject = screenStream;
+
+                // Broadcast to all peers
+                Object.values(peerConnections).forEach(pc => {
+                    screenStream.getTracks().forEach(track => {
+                        pc.addTrack(track, screenStream);
+                    });
+                });
+
+                screenStream.getVideoTracks()[0].onended = () => {
+                    screenContainer.remove();
+                };
+
+            } catch (error) {
+                console.error('Error sharing screen:', error);
+            }
+        }
+
+        async function shareClientScreen() {
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: true 
+                });
+
+                // Add screen share video to grid
+                const videoGrid = document.getElementById('clientVideoGrid');
+                const screenContainer = document.createElement('div');
+                screenContainer.className = 'video-container';
+                screenContainer.id = 'clientScreenShare';
+                screenContainer.innerHTML = `
+                    <div class="video-label">Your Screen Share</div>
+                    <video autoplay playsinline></video>
+                `;
+                videoGrid.appendChild(screenContainer);
+                
+                const screenVideo = screenContainer.querySelector('video');
+                screenVideo.srcObject = screenStream;
+
+                // Broadcast to all peers
+                Object.values(peerConnections).forEach(pc => {
+                    screenStream.getTracks().forEach(track => {
+                        pc.addTrack(track, screenStream);
+                    });
+                });
+
+                screenStream.getVideoTracks()[0].onended = () => {
+                    screenContainer.remove();
+                };
+
+            } catch (error) {
+                console.error('Error sharing screen:', error);
+            }
+        }
+
+        // Socket event handlers
+        socket.on('room-created', ({ roomId }) => {
             console.log('Room created:', roomId);
         });
 
@@ -393,22 +609,42 @@
             hideAllScreens();
             document.getElementById('clientScreen').style.display = 'block';
 
-            await createPeerConnection(hostId, false);            // Create peer connection to host
+            // Create peer connection to host
+            await createPeerConnection(hostId, false, hostName);
+        });
+
+        socket.on('existing-participants', async ({ participants, host }) => {
+            console.log('Existing participants:', participants);
+            // Connect to existing participants
+            for (const participant of participants) {
+                await createPeerConnection(participant.id, false, participant.name);
+            }
+        });
+
+        socket.on('new-participant', async ({ participantId, participantName }) => {
+            console.log('New participant joined:', participantName);
+            if (!isHost) {
+                // Clients connect to other clients
+                await createPeerConnection(participantId, false, participantName);
+            }
         });
 
         socket.on('client-joined', async ({ clientId, clientName, totalClients }) => {
             console.log('Client joined:', clientName);
             document.getElementById('clientCount').textContent = totalClients;
 
-            addClientToList(clientId, clientName);            // add client to UI
+            // Add client to UI (only host sees this)
+            addClientToList(clientId, clientName);
 
-            await createPeerConnection(clientId, true);         // create peer connection to client
+            // Create peer connection to client
+            await createPeerConnection(clientId, true, clientName);
         });
 
         socket.on('client-left', ({ clientId, totalClients }) => {
             console.log('Client left:', clientId);
             document.getElementById('clientCount').textContent = totalClients;
             removeClientFromList(clientId);
+            removeVideoElement(clientId);
             
             if (peerConnections[clientId]) {
                 peerConnections[clientId].close();
@@ -426,11 +662,12 @@
             showHome();
         });
 
-        socket.on('offer', async ({ offer, sender }) => {       // WebRTC signaling
+        // WebRTC signaling
+        socket.on('offer', async ({ offer, sender }) => {
             console.log('Received offer from:', sender);
             
             if (!peerConnections[sender]) {
-                await createPeerConnection(sender, false);
+                await createPeerConnection(sender, false, 'Participant');
             }
 
             await peerConnections[sender].setRemoteDescription(new RTCSessionDescription(offer));
@@ -451,30 +688,33 @@
             }
         });
 
-        async function createPeerConnection(peerId, isInitiator) {        // create peer connection
+        // Create peer connection
+        async function createPeerConnection(peerId, isInitiator, peerName) {
             const pc = new RTCPeerConnection(configuration);
             peerConnections[peerId] = pc;
 
-            if (isHost && localStream) {            // add local stream tracks (host only)
+            // Add local stream tracks
+            if (localStream) {
                 localStream.getTracks().forEach(track => {
                     pc.addTrack(track, localStream);
                 });
             }
 
-            pc.ontrack = (event) => {            // Handle incoming stream (client only)
-                console.log('Received remote track');
-                if (!isHost) {
-                    document.getElementById('clientVideo').srcObject = event.streams[0];
-                }
+            // Handle incoming stream
+            pc.ontrack = (event) => {
+                console.log('Received remote track from:', peerId);
+                addRemoteVideo(peerId, event.streams[0], peerName);
             };
 
-            pc.onicecandidate = (event) => {                // Handle ICE candidates
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
                 if (event.candidate) {
                     socket.emit('ice-candidate', { target: peerId, candidate: event.candidate });
                 }
             };
 
-            if (isInitiator) {                      // create offer if initiator
+            // Create offer if initiator
+            if (isInitiator) {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 socket.emit('offer', { target: peerId, offer });
@@ -483,7 +723,36 @@
             return pc;
         }
 
-        function addClientToList(clientId, clientName) {                // UI functions
+        // Add remote video to grid
+        function addRemoteVideo(peerId, stream, peerName) {
+            const gridId = isHost ? 'hostVideoGrid' : 'clientVideoGrid';
+            const videoGrid = document.getElementById(gridId);
+            
+            // Remove if already exists
+            removeVideoElement(peerId);
+
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container';
+            videoContainer.id = `video-${peerId}`;
+            videoContainer.innerHTML = `
+                <div class="video-label">${peerName}</div>
+                <video autoplay playsinline></video>
+            `;
+            
+            videoGrid.appendChild(videoContainer);
+            const video = videoContainer.querySelector('video');
+            video.srcObject = stream;
+        }
+
+        function removeVideoElement(peerId) {
+            const videoElement = document.getElementById(`video-${peerId}`);
+            if (videoElement) {
+                videoElement.remove();
+            }
+        }
+
+        // UI functions
+        function addClientToList(clientId, clientName) {
             const clientsList = document.getElementById('clientsList');
             const clientCard = document.createElement('div');
             clientCard.className = 'client-card';
@@ -519,19 +788,50 @@
         }
 
         function cleanup() {
-            if (localStream) {                      // stop local stream
+            // Stop local stream
+            if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
 
-            Object.values(peerConnections).forEach(pc => pc.close());            // close all peer connections
+            // Stop screen stream
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+            }
+
+            // Close all peer connections
+            Object.values(peerConnections).forEach(pc => pc.close());
             peerConnections = {};
 
-            document.getElementById('clientsList').innerHTML = '';            // clear UI
+            // Clear UI
+            document.getElementById('clientsList').innerHTML = '';
             document.getElementById('clientCount').textContent = '0';
+            document.getElementById('hostVideoGrid').innerHTML = `
+                <div class="video-container">
+                    <div class="video-label">You (Teacher)</div>
+                    <video id="hostVideo" autoplay muted playsinline></video>
+                    <div class="video-controls">
+                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎤</button>
+                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📹</button>
+                        <button class="control-btn" onclick="shareHostScreen()">🖥️</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('clientVideoGrid').innerHTML = `
+                <div class="video-container">
+                    <div class="video-label">You</div>
+                    <video id="myVideo" autoplay muted playsinline></video>
+                    <div class="video-controls">
+                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎤</button>
+                        <button class="control-btn" onclick="shareClientScreen()">🖥️</button>
+                    </div>
+                </div>
+            `;
         }
 
-        showHome();        // home screen on load
+        // Show home screen on load
+        showHome();
     </script>
 </body>
 </html>
