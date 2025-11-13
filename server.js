@@ -58,14 +58,12 @@ io.on('connection', (socket) => {
       hostName: room.hostName
     });
 
-    // Notify all other clients about new participant
-    socket.to(roomId).emit('new-participant', {
+    socket.to(roomId).emit('new-participant', {    // Notify all other clients about new participant
       participantId: socket.id,
       participantName: clientName
     });
 
-    // Send existing participants to new client
-    const existingParticipants = room.clients
+    const existingParticipants = room.clients    // Send existing participants to new client
       .filter(c => c.id !== socket.id)
       .map(c => ({ id: c.id, name: c.name }));
     
@@ -77,8 +75,7 @@ io.on('connection', (socket) => {
     console.log(`${clientName} joined room ${roomId}`);
   });
 
-  // WebRTC signaling
-  socket.on('offer', ({ target, offer }) => {
+  socket.on('offer', ({ target, offer }) => {   // WebRTC signaling
     io.to(target).emit('offer', {
       offer: offer,
       sender: socket.id

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Class - Streaming App</title>
+    <title>Luma-Powering smart classrooms</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 900px;
+            max-width: 700px;
             width: 100%;
         }
 
@@ -279,18 +279,18 @@
 </head>
 <body>
     <div class="container">
-        <!-- Home Screen -->
+        <!-- Home -->
         <div id="homeScreen">
-            <h1>Online Classroom</h1>
-            <p class="subtitle">Connect teachers and students seamlessly</p>
+            <h1>Luma</h1>
+            <p class="subtitle">Powering smart classrooms</p>
             
-            <button onclick="showHostSetup()">Start as Teacher (Host)</button>
-            <button class="btn-secondary" onclick="showClientSetup()">Join as Student (Client)</button>
+            <button onclick="showHostSetup()">Start as Teacher</button>
+            <button class="btn-secondary" onclick="showClientSetup()">Join as Student</button>
         </div>
 
-        <!-- Host Setup -->
+        <!-- Host  -->
         <div id="hostSetup">
-            <h1>Teacher Setup</h1>
+            <h1>Teacher</h1>
             <p class="subtitle">Start your online class</p>
             
             <div class="form-group">
@@ -302,9 +302,9 @@
             <button class="btn-secondary" onclick="showHome()">Back</button>
         </div>
 
-        <!-- Client Setup -->
+        <!-- Client -->
         <div id="clientSetup">
-            <h1>Student Setup</h1>
+            <h1>Student</h1>
             <p class="subtitle">Join a classroom</p>
             
             <div class="form-group">
@@ -321,7 +321,7 @@
             <button class="btn-secondary" onclick="showHome()">Back</button>
         </div>
 
-        <!-- Host Screen -->
+        <!-- Host  -->
         <div id="hostScreen">
             <h1>Teaching Live</h1>
             
@@ -336,8 +336,8 @@
                     <div class="video-label">You (Teacher)</div>
                     <video id="hostVideo" autoplay muted playsinline></video>
                     <div class="video-controls">
-                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎤</button>
-                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📹</button>
+                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎙️</button>
+                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📷</button>
                         <button class="control-btn" onclick="shareHostScreen()">🖥️</button>
                     </div>
                 </div>
@@ -349,7 +349,7 @@
             <button class="btn-danger" onclick="endClass()">End Class</button>
         </div>
 
-        <!-- Client Screen -->
+        <!-- Client -->
         <div id="clientScreen">
             <h1>Attending Class</h1>
             
@@ -363,7 +363,7 @@
                     <div class="video-label">You</div>
                     <video id="myVideo" autoplay muted playsinline></video>
                     <div class="video-controls">
-                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎤</button>
+                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎙️</button>
                         <button class="control-btn" onclick="shareClientScreen()">🖥️</button>
                     </div>
                 </div>
@@ -392,8 +392,7 @@
             ]
         };
 
-        // Navigation functions
-        function showHome() {
+        function showHome() {           // Navigation
             hideAllScreens();
             document.getElementById('homeScreen').style.display = 'block';
         }
@@ -416,8 +415,7 @@
             document.getElementById('clientScreen').style.display = 'none';
         }
 
-        // Create room (Host)
-        async function createRoom() {
+        async function createRoom() {               // Create room -host
             const hostName = document.getElementById('hostName').value.trim();
             if (!hostName) {
                 alert('Please enter your name');
@@ -449,8 +447,7 @@
             }
         }
 
-        // Join room (Client)
-        async function joinRoom() {
+        async function joinRoom() {        // Join room -Client
             const clientName = document.getElementById('clientName').value.trim();
             const roomId = document.getElementById('roomId').value.trim();
 
@@ -460,7 +457,6 @@
             }
 
             try {
-                // Client MUST have camera and audio
                 localStream = await navigator.mediaDevices.getUserMedia({ 
                     video: true, 
                     audio: true 
@@ -479,12 +475,11 @@
             }
         }
 
-        // Generate random room ID
-        function generateRoomId() {
+        function generateRoomId() {        // generate random room ID
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // Toggle controls
+        // toggling
         function toggleHostMic() {
             if (localStream) {
                 const audioTrack = localStream.getAudioTracks()[0];
@@ -493,7 +488,7 @@
                     isMicOn = audioTrack.enabled;
                     const btn = document.getElementById('hostMicBtn');
                     btn.classList.toggle('active', !isMicOn);
-                    btn.textContent = isMicOn ? '🎤' : '🔇';
+                    btn.textContent = isMicOn ? '🎙️' : '🔇';
                 }
             }
         }
@@ -506,7 +501,7 @@
                     isCameraOn = videoTrack.enabled;
                     const btn = document.getElementById('hostCamBtn');
                     btn.classList.toggle('active', !isCameraOn);
-                    btn.textContent = isCameraOn ? '📹' : '📷';
+                    btn.textContent = isCameraOn ? '📷' : '📷';
                 }
             }
         }
@@ -519,7 +514,7 @@
                     isMicOn = audioTrack.enabled;
                     const btn = document.getElementById('clientMicBtn');
                     btn.classList.toggle('active', !isMicOn);
-                    btn.textContent = isMicOn ? '🎤' : '🔇';
+                    btn.textContent = isMicOn ? '🎙️' : '🔇';
                 }
             }
         }
@@ -531,7 +526,7 @@
                     video: true 
                 });
 
-                // Add screen share video to grid
+                // add screen share video-grid
                 const videoGrid = document.getElementById('hostVideoGrid');
                 const screenContainer = document.createElement('div');
                 screenContainer.className = 'video-container';
@@ -812,8 +807,8 @@
                     <div class="video-label">You (Teacher)</div>
                     <video id="hostVideo" autoplay muted playsinline></video>
                     <div class="video-controls">
-                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎤</button>
-                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📹</button>
+                        <button class="control-btn" id="hostMicBtn" onclick="toggleHostMic()">🎙️</button>
+                        <button class="control-btn" id="hostCamBtn" onclick="toggleHostCamera()">📷</button>
                         <button class="control-btn" onclick="shareHostScreen()">🖥️</button>
                     </div>
                 </div>
@@ -823,15 +818,14 @@
                     <div class="video-label">You</div>
                     <video id="myVideo" autoplay muted playsinline></video>
                     <div class="video-controls">
-                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎤</button>
+                        <button class="control-btn" id="clientMicBtn" onclick="toggleClientMic()">🎙️</button>
                         <button class="control-btn" onclick="shareClientScreen()">🖥️</button>
                     </div>
                 </div>
             `;
         }
 
-        // Show home screen on load
-        showHome();
+        showHome(); // Show home screen
     </script>
 </body>
 </html>
