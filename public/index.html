@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Class - Streaming App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #764ba2;
+        }
+
+        .btn-secondary:hover {
+            background: #63408a;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        #homeScreen, #hostScreen, #clientScreen {
+            display: none;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-height: 400px;
+        }
+
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .client-card {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .client-avatar {
+            width: 50px;
+            height: 50px;
+            background: #667eea;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .client-name {
+            font-size: 12px;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #2ecc71;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .video-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="homeScreen">
+            <h1>📚 Online Classroom</h1>
+            <p class="subtitle">Connect teachers and students seamlessly</p>
+            
+            <button onclick="showHostSetup()">Start as Teacher (Host)</button>
+            <button class="btn-secondary" onclick="showClientSetup()">Join as Student (Client)</button>
+        </div>
+
+        <!-- Host Setup -->
+        <div id="hostSetup">
+            <h1>👨‍🏫 Teacher Setup</h1>
+            <p class="subtitle">Start your online class</p>
+            
+            <div class="form-group">
+                <label for="hostName">Your Name:</label>
+                <input type="text" id="hostName" placeholder="Enter your name" required>
+            </div>
+            
+            <button onclick="createRoom()">Create Classroom</button>
+            <button class="btn-secondary" onclick="showHome()">Back</button>
+        </div>
+
+        <!-- Client Setup -->
+        <div id="clientSetup">
+            <h1>👨‍🎓 Student Setup</h1>
+            <p class="subtitle">Join a classroom</p>
+            
+            <div class="form-group">
+                <label for="clientName">Your Name:</label>
+                <input type="text" id="clientName" placeholder="Enter your name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="roomId">Classroom Code:</label>
+                <input type="text" id="roomId" placeholder="Enter classroom code" required>
+            </div>
+            
+            <button onclick="joinRoom()">Join Classroom</button>
+            <button class="btn-secondary" onclick="showHome()">Back</button>
+        </div>
+
+        <!-- Host Screen -->
+        <div id="hostScreen">
+            <h1>📹 Teaching Live</h1>
+            
+            <div class="info-box">
+                <p><strong>Classroom Code:</strong> <span id="displayRoomId"></span></p>
+                <p><strong>Teacher:</strong> <span id="displayHostName"></span></p>
+                <p><strong>Students Online:</strong> <span id="clientCount" class="status">0</span></p>
+            </div>
+
+            <div class="video-container">
+                <div class="video-label">Your Camera</div>
+                <video id="hostVideo" autoplay muted playsinline></video>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; color: #333;">Connected Students:</h3>
+            <div id="clientsList" class="clients-grid"></div>
+
+            <button class="btn-danger" onclick="endClass()">End Class</button>
+        </div>
+
+        <!-- Client Screen -->
+        <div id="clientScreen">
+            <h1>📺 Attending Class</h1>
+            
+            <div class="info-box">
+                <p><strong>Teacher:</strong> <span id="displayTeacherName"></span></p>
+                <p><strong>Status:</strong> <span class="status">Connected</span></p>
+            </div>
+
+            <div class="video-container">
+                <div class="video-label">Teacher's Screen</div>
+                <video id="clientVideo" autoplay playsinline></video>
+            </div>
+
+            <button class="btn-danger" onclick="leaveClass()">Leave Class</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let localStream = null;
+        let peerConnections = {};
+        let currentRoomId = null;
+        let isHost = false;
+
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Navigation functions
+        function showHome() {
+            hideAllScreens();
+            document.getElementById('homeScreen').style.display = 'block';
+        }
+
+        function showHostSetup() {
+            hideAllScreens();
+            document.getElementById('hostSetup').style.display = 'block';
+        }
+
+        function showClientSetup() {
+            hideAllScreens();
+            document.getElementById('clientSetup').style.display = 'block';
+        }
+
+        function hideAllScreens() {
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('hostSetup').style.display = 'none';
+            document.getElementById('clientSetup').style.display = 'none';
+            document.getElementById('hostScreen').style.display = 'none';
+            document.getElementById('clientScreen').style.display = 'none';
+        }
+
+        // Create room (Host)
+        async function createRoom() {
+            const hostName = document.getElementById('hostName').value.trim();
+            if (!hostName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                const roomId = generateRoomId();
+                currentRoomId = roomId;
+                isHost = true;
+
+                document.getElementById('hostVideo').srcObject = localStream;
+                document.getElementById('displayRoomId').textContent = roomId;
+                document.getElementById('displayHostName').textContent = hostName;
+
+                socket.emit('create-room', { roomId, hostName });
+
+                hideAllScreens();
+                document.getElementById('hostScreen').style.display = 'block';
+            } catch (error) {
+                console.error('Error accessing media devices:', error);
+                alert('Could not access camera/microphone. Please grant permissions.');
+            }
+        }
+
+        // Join room (Client)
+        function joinRoom() {
+            const clientName = document.getElementById('clientName').value.trim();
+            const roomId = document.getElementById('roomId').value.trim();
+
+            if (!clientName || !roomId) {
+                alert('Please enter your name and classroom code');
+                return;
+            }
+
+            currentRoomId = roomId;
+            isHost = false;
+
+            socket.emit('join-room', { roomId, clientName });
+        }
+
+        // Generate random room ID
+        function generateRoomId() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        // Socket event handlers
+        socket.on('room-created', ({ roomId }) => {
+            console.log('Room created:', roomId);
+        });
+
+        socket.on('joined-room', async ({ hostId, hostName }) => {
+            console.log('Joined room, host:', hostName);
+            document.getElementById('displayTeacherName').textContent = hostName;
+            
+            hideAllScreens();
+            document.getElementById('clientScreen').style.display = 'block';
+
+            // Create peer connection to host
+            await createPeerConnection(hostId, false);
+        });
+
+        socket.on('client-joined', async ({ clientId, clientName, totalClients }) => {
+            console.log('Client joined:', clientName);
+            document.getElementById('clientCount').textContent = totalClients;
+
+            // Add client to UI
+            addClientToList(clientId, clientName);
+
+            // Create peer connection to client
+            await createPeerConnection(clientId, true);
+        });
+
+        socket.on('client-left', ({ clientId, totalClients }) => {
+            console.log('Client left:', clientId);
+            document.getElementById('clientCount').textContent = totalClients;
+            removeClientFromList(clientId);
+            
+            if (peerConnections[clientId]) {
+                peerConnections[clientId].close();
+                delete peerConnections[clientId];
+            }
+        });
+
+        socket.on('host-left', () => {
+            alert('Teacher has ended the class');
+            leaveClass();
+        });
+
+        socket.on('error', ({ message }) => {
+            alert(message);
+            showHome();
+        });
+
+        // WebRTC signaling
+        socket.on('offer', async ({ offer, sender }) => {
+            console.log('Received offer from:', sender);
+            
+            if (!peerConnections[sender]) {
+                await createPeerConnection(sender, false);
+            }
+
+            await peerConnections[sender].setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnections[sender].createAnswer();
+            await peerConnections[sender].setLocalDescription(answer);
+
+            socket.emit('answer', { target: sender, answer });
+        });
+
+        socket.on('answer', async ({ answer, sender }) => {
+            console.log('Received answer from:', sender);
+            await peerConnections[sender].setRemoteDescription(new RTCSessionDescription(answer));
+        });
+
+        socket.on('ice-candidate', async ({ candidate, sender }) => {
+            if (peerConnections[sender] && candidate) {
+                await peerConnections[sender].addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        });
+
+        // Create peer connection
+        async function createPeerConnection(peerId, isInitiator) {
+            const pc = new RTCPeerConnection(configuration);
+            peerConnections[peerId] = pc;
+
+            // Add local stream tracks (host only)
+            if (isHost && localStream) {
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+            }
+
+            // Handle incoming stream (client only)
+            pc.ontrack = (event) => {
+                console.log('Received remote track');
+                if (!isHost) {
+                    document.getElementById('clientVideo').srcObject = event.streams[0];
+                }
+            };
+
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { target: peerId, candidate: event.candidate });
+                }
+            };
+
+            // Create offer if initiator
+            if (isInitiator) {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socket.emit('offer', { target: peerId, offer });
+            }
+
+            return pc;
+        }
+
+        // UI functions
+        function addClientToList(clientId, clientName) {
+            const clientsList = document.getElementById('clientsList');
+            const clientCard = document.createElement('div');
+            clientCard.className = 'client-card';
+            clientCard.id = `client-${clientId}`;
+            
+            const initial = clientName.charAt(0).toUpperCase();
+            clientCard.innerHTML = `
+                <div class="client-avatar">${initial}</div>
+                <div class="client-name">${clientName}</div>
+            `;
+            
+            clientsList.appendChild(clientCard);
+        }
+
+        function removeClientFromList(clientId) {
+            const clientCard = document.getElementById(`client-${clientId}`);
+            if (clientCard) {
+                clientCard.remove();
+            }
+        }
+
+        function endClass() {
+            if (confirm('Are you sure you want to end the class?')) {
+                cleanup();
+                showHome();
+            }
+        }
+
+        function leaveClass() {
+            socket.emit('leave-room', { roomId: currentRoomId });
+            cleanup();
+            showHome();
+        }
+
+        function cleanup() {
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            // Close all peer connections
+            Object.values(peerConnections).forEach(pc => pc.close());
+            peerConnections = {};
+
+            // Clear UI
+            document.getElementById('clientsList').innerHTML = '';
+            document.getElementById('clientCount').textContent = '0';
+        }
+
+        // Show home screen on load
+        showHome();
+    </script>
+</body>
+</html>
