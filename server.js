@@ -7,17 +7,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files
-app.use(express.static('public'));
+app.use(express.static('public'));  // serve static files
 
-// Store active rooms
-const rooms = new Map();
+const rooms = new Map();    // store active rooms
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Create room (Host)
-  socket.on('create-room', ({ roomId, hostName }) => {
+  socket.on('create-room', ({ roomId, hostName }) => {   // Create room -Host
     socket.join(roomId);
     rooms.set(roomId, {
       hostId: socket.id,
@@ -28,8 +25,7 @@ io.on('connection', (socket) => {
     console.log(`Room created: ${roomId} by ${hostName}`);
   });
 
-  // Join room (Client)
-  socket.on('join-room', ({ roomId, clientName }) => {
+  socket.on('join-room', ({ roomId, clientName }) => {   // join room -Client
     const room = rooms.get(roomId);
     
     if (!room) {
@@ -45,15 +41,14 @@ io.on('connection', (socket) => {
     
     room.clients.push(clientInfo);
     
-    // Notify host about new client
-    io.to(room.hostId).emit('client-joined', {
+    io.to(room.hostId).emit('client-joined', {    // Notify host about new client
       clientId: socket.id,
       clientName: clientName,
       totalClients: room.clients.length
     });
 
-    // Send host info to client
-    socket.emit('joined-room', {
+    socket.emit('joined-room', {    // send host info to client
+
       hostId: room.hostId,
       hostName: room.hostName
     });
@@ -61,8 +56,7 @@ io.on('connection', (socket) => {
     console.log(`${clientName} joined room ${roomId}`);
   });
 
-  // WebRTC signaling
-  socket.on('offer', ({ target, offer }) => {
+  socket.on('offer', ({ target, offer }) => {     // WebRTC signaling
     io.to(target).emit('offer', {
       offer: offer,
       sender: socket.id
@@ -83,20 +77,16 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Handle disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', () => {       // handle disconnect
     console.log('User disconnected:', socket.id);
     
-    // Check if disconnected user was a host
-    rooms.forEach((room, roomId) => {
+    rooms.forEach((room, roomId) => {       // check if disconnected user was a host
       if (room.hostId === socket.id) {
-        // Notify all clients that host left
-        io.to(roomId).emit('host-left');
+        io.to(roomId).emit('host-left');            // notify all clients that host left
         rooms.delete(roomId);
         console.log(`Room ${roomId} closed - host left`);
       } else {
-        // Remove client from room
-        const clientIndex = room.clients.findIndex(c => c.id === socket.id);
+        const clientIndex = room.clients.findIndex(c => c.id === socket.id);          // remove client from room
         if (clientIndex > -1) {
           room.clients.splice(clientIndex, 1);
           io.to(room.hostId).emit('client-left', {

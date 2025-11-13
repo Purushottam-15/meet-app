@@ -13,7 +13,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #edeeef 0%, #bdbcbe 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -31,7 +31,7 @@
         }
 
         h1 {
-            color: #667eea;
+            color: #202122;
             text-align: center;
             margin-bottom: 10px;
             font-size: 28px;
@@ -39,7 +39,7 @@
 
         .subtitle {
             text-align: center;
-            color: #666;
+            color: #313131;
             margin-bottom: 30px;
             font-size: 14px;
         }
@@ -66,13 +66,13 @@
 
         input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #9d9fa9;
         }
 
         button {
             width: 100%;
             padding: 14px;
-            background: #667eea;
+            background: #a1a3ae;
             color: white;
             border: none;
             border-radius: 8px;
@@ -84,15 +84,15 @@
         }
 
         button:hover {
-            background: #5568d3;
+            background: #48494f;
         }
 
         .btn-secondary {
-            background: #764ba2;
+            background: #6d6971;
         }
 
         .btn-secondary:hover {
-            background: #63408a;
+            background: #7f7a84;
         }
 
         .btn-danger {
@@ -142,7 +142,7 @@
         .client-avatar {
             width: 50px;
             height: 50px;
-            background: #667eea;
+            background: #898b93;
             border-radius: 50%;
             margin: 0 auto 10px;
             display: flex;
@@ -164,7 +164,7 @@
             padding: 15px;
             border-radius: 8px;
             margin: 20px 0;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #848797;
         }
 
         .info-box p {
@@ -180,7 +180,7 @@
         .status {
             display: inline-block;
             padding: 5px 10px;
-            background: #2ecc71;
+            background: #6e99d8;
             color: white;
             border-radius: 5px;
             font-size: 12px;
@@ -217,7 +217,7 @@
     <div class="container">
         <!-- Home Screen -->
         <div id="homeScreen">
-            <h1>📚 Online Classroom</h1>
+            <h1>Online Classroom</h1>
             <p class="subtitle">Connect teachers and students seamlessly</p>
             
             <button onclick="showHostSetup()">Start as Teacher (Host)</button>
@@ -226,7 +226,7 @@
 
         <!-- Host Setup -->
         <div id="hostSetup">
-            <h1>👨‍🏫 Teacher Setup</h1>
+            <h1>Teacher Setup</h1>
             <p class="subtitle">Start your online class</p>
             
             <div class="form-group">
@@ -240,7 +240,7 @@
 
         <!-- Client Setup -->
         <div id="clientSetup">
-            <h1>👨‍🎓 Student Setup</h1>
+            <h1>Student Setup</h1>
             <p class="subtitle">Join a classroom</p>
             
             <div class="form-group">
@@ -259,7 +259,7 @@
 
         <!-- Host Screen -->
         <div id="hostScreen">
-            <h1>📹 Teaching Live</h1>
+            <h1>Teaching Live</h1>
             
             <div class="info-box">
                 <p><strong>Classroom Code:</strong> <span id="displayRoomId"></span></p>
@@ -280,7 +280,7 @@
 
         <!-- Client Screen -->
         <div id="clientScreen">
-            <h1>📺 Attending Class</h1>
+            <h1>Attending Class</h1>
             
             <div class="info-box">
                 <p><strong>Teacher:</strong> <span id="displayTeacherName"></span></p>
@@ -310,9 +310,7 @@
                 { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
-
-        // Navigation functions
-        function showHome() {
+        function showHome() {   // Navigation
             hideAllScreens();
             document.getElementById('homeScreen').style.display = 'block';
         }
@@ -335,8 +333,7 @@
             document.getElementById('clientScreen').style.display = 'none';
         }
 
-        // Create room (Host)
-        async function createRoom() {
+        async function createRoom() {    //Host
             const hostName = document.getElementById('hostName').value.trim();
             if (!hostName) {
                 alert('Please enter your name');
@@ -366,9 +363,7 @@
                 alert('Could not access camera/microphone. Please grant permissions.');
             }
         }
-
-        // Join room (Client)
-        function joinRoom() {
+        function joinRoom() {    //Client
             const clientName = document.getElementById('clientName').value.trim();
             const roomId = document.getElementById('roomId').value.trim();
 
@@ -383,13 +378,11 @@
             socket.emit('join-room', { roomId, clientName });
         }
 
-        // Generate random room ID
-        function generateRoomId() {
+        function generateRoomId() {      // generate random room ID
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // Socket event handlers
-        socket.on('room-created', ({ roomId }) => {
+        socket.on('room-created', ({ roomId }) => {     // socket event handlers
             console.log('Room created:', roomId);
         });
 
@@ -400,19 +393,16 @@
             hideAllScreens();
             document.getElementById('clientScreen').style.display = 'block';
 
-            // Create peer connection to host
-            await createPeerConnection(hostId, false);
+            await createPeerConnection(hostId, false);            // Create peer connection to host
         });
 
         socket.on('client-joined', async ({ clientId, clientName, totalClients }) => {
             console.log('Client joined:', clientName);
             document.getElementById('clientCount').textContent = totalClients;
 
-            // Add client to UI
-            addClientToList(clientId, clientName);
+            addClientToList(clientId, clientName);            // add client to UI
 
-            // Create peer connection to client
-            await createPeerConnection(clientId, true);
+            await createPeerConnection(clientId, true);         // create peer connection to client
         });
 
         socket.on('client-left', ({ clientId, totalClients }) => {
@@ -436,8 +426,7 @@
             showHome();
         });
 
-        // WebRTC signaling
-        socket.on('offer', async ({ offer, sender }) => {
+        socket.on('offer', async ({ offer, sender }) => {       // WebRTC signaling
             console.log('Received offer from:', sender);
             
             if (!peerConnections[sender]) {
@@ -462,35 +451,30 @@
             }
         });
 
-        // Create peer connection
-        async function createPeerConnection(peerId, isInitiator) {
+        async function createPeerConnection(peerId, isInitiator) {        // create peer connection
             const pc = new RTCPeerConnection(configuration);
             peerConnections[peerId] = pc;
 
-            // Add local stream tracks (host only)
-            if (isHost && localStream) {
+            if (isHost && localStream) {            // add local stream tracks (host only)
                 localStream.getTracks().forEach(track => {
                     pc.addTrack(track, localStream);
                 });
             }
 
-            // Handle incoming stream (client only)
-            pc.ontrack = (event) => {
+            pc.ontrack = (event) => {            // Handle incoming stream (client only)
                 console.log('Received remote track');
                 if (!isHost) {
                     document.getElementById('clientVideo').srcObject = event.streams[0];
                 }
             };
 
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
+            pc.onicecandidate = (event) => {                // Handle ICE candidates
                 if (event.candidate) {
                     socket.emit('ice-candidate', { target: peerId, candidate: event.candidate });
                 }
             };
 
-            // Create offer if initiator
-            if (isInitiator) {
+            if (isInitiator) {                      // create offer if initiator
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 socket.emit('offer', { target: peerId, offer });
@@ -499,8 +483,7 @@
             return pc;
         }
 
-        // UI functions
-        function addClientToList(clientId, clientName) {
+        function addClientToList(clientId, clientName) {                // UI functions
             const clientsList = document.getElementById('clientsList');
             const clientCard = document.createElement('div');
             clientCard.className = 'client-card';
@@ -536,23 +519,19 @@
         }
 
         function cleanup() {
-            // Stop local stream
-            if (localStream) {
+            if (localStream) {                      // stop local stream
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
 
-            // Close all peer connections
-            Object.values(peerConnections).forEach(pc => pc.close());
+            Object.values(peerConnections).forEach(pc => pc.close());            // close all peer connections
             peerConnections = {};
 
-            // Clear UI
-            document.getElementById('clientsList').innerHTML = '';
+            document.getElementById('clientsList').innerHTML = '';            // clear UI
             document.getElementById('clientCount').textContent = '0';
         }
 
-        // Show home screen on load
-        showHome();
+        showHome();        // home screen on load
     </script>
 </body>
 </html>
